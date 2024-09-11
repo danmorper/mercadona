@@ -11,7 +11,7 @@ This project processes receipts (tickets) in PDF format, extracts the relevant i
 - Alcoholic Beverages
 - Others
 
-Additionally, users can upload an existing CSV file with previously processed data along with new PDF receipts to aggregate and visualize all the data.
+Additionally, users can upload an existing CSV file with previously processed data and new PDF receipts to aggregate and visualize all the data.
 
 ## Features
 
@@ -21,9 +21,13 @@ Additionally, users can upload an existing CSV file with previously processed da
 - **Data Visualization**: Displays time-series and categorical spending charts using `chart.js` in React.
 - **CSV Download**: Allows users to download the combined data (newly processed PDFs and uploaded CSV) as a CSV file.
 
+### New Feature: Unicode Normalization
+
+- All product category names (e.g., "Bebidas alcohólicas") are normalized (converted to lowercase and stripped of accents) to ensure consistency between the backend and frontend.
+
 ## Project Structure
 
-```bash
+\`\`\`bash
 mercadona/
 │
 ├── backend/
@@ -36,6 +40,11 @@ mercadona/
 │   ├── node_modules/            # Node.js dependencies
 │   ├── public/                  # Public directory for frontend
 │   ├── src/
+│   │   ├── components/          # Folder containing reusable React components
+│   │   │   ├── ChartDisplay.js  # Component for displaying charts
+│   │   │   ├── DownloadButton.js# Component for downloading CSV
+│   │   │   ├── FileUpload.js    # Component for uploading files (PDF/CSV)
+│   │   │   ├── TicketTable.js   # Component for displaying ticket data in a table
 │   │   ├── App.js               # Main React component
 │   │   ├── index.js             # React index file
 │   └── package.json             # Frontend dependencies
@@ -43,52 +52,57 @@ mercadona/
 ├── tickets/                     # Directory to store PDF tickets
 ├── .gitignore                   # Gitignore file to exclude unnecessary files
 └── README.md                    # Project documentation
-```
+\`\`\`
 
 ## Installation
 
 ### Backend (Python)
+
 1. Navigate to the backend directory:
-   ```bash
+   \`\`\`bash
    cd backend
-   ```
+   \`\`\`
 2. Create a virtual environment and activate it:
-   ```bash
+   \`\`\`bash
    python3 -m venv venv
    source venv/bin/activate
-   ```
+   \`\`\`
 3. Install the required Python libraries:
-   ```bash
+   \`\`\`bash
    pip install -r requirements.txt
-   ```
+   \`\`\`
 4. Run the FastAPI server:
-   ```bash
+   \`\`\`bash
    uvicorn main:app --reload
-   ```
+   \`\`\`
 
 ### Frontend (React)
+
 1. Navigate to the frontend directory:
-   ```bash
+   \`\`\`bash
    cd frontend
-   ```
+   \`\`\`
 2. Install the required Node.js libraries:
-   ```bash
+   \`\`\`bash
    npm install
-   ```
+   \`\`\`
 3. Start the React development server:
-   ```bash
+   \`\`\`bash
    npm start
-   ```
+   \`\`\`
 
 ## Libraries Used
 
 ### Python
+
 - **FastAPI**: For building the backend API.
 - **PyPDF2**: For extracting text from PDF files.
 - **Pandas**: For handling and processing tabular data.
 - **Uvicorn**: ASGI server for running FastAPI applications.
+- **Unidecode**: For normalizing Unicode characters (removing accents).
 
 ### JavaScript (React)
+
 - **React.js**: For building the frontend interface.
 - **PapaParse**: For parsing CSV files in the browser.
 - **chart.js**: For rendering interactive charts.
@@ -101,183 +115,13 @@ mercadona/
 3. **Visualizing Data**: After uploading, time-series charts and categorical spending charts will be displayed.
 4. **Download CSV**: Once processed, the data can be downloaded as a combined CSV file.
 
-## Screenshots
+## Unicode Normalization
 
-![App Screenshot](screenshot.png)
-
-## Future Improvements
-
-- Improve classification for more product types.
-- Handle multiple PDF formats more robustly.
-- Add authentication for user-specific data management.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+- **Category Names Normalization**: All product category names are automatically converted to lowercase and have accents removed to avoid inconsistencies in display and categorization.
 
 # Scripts
 
-
-## App.js
-
-```javascript
-import React, { useState } from 'react';
-import { Line, Bar } from 'react-chartjs-2';
-import 'chart.js/auto'; // Import Chart.js
-import Papa from 'papaparse'; // For CSV parsing
-
-function App() {
-  const [selectedFiles, setSelectedFiles] = useState(null);
-  const [csvFile, setCsvFile] = useState(null);
-  const [ticketData, setTicketData] = useState([]);
-  const [serieTemporal, setSerieTemporal] = useState([]);
-  const [gastoCategoria, setGastoCategoria] = useState([]);
-
-  // Handle file selection for PDFs
-  const handleFileChange = (event) => {
-    setSelectedFiles(event.target.files);
-  };
-
-  // Handle file selection for CSV
-  const handleCsvChange = (event) => {
-    setCsvFile(event.target.files[0]);
-  };
-
-  // Handle Upload and Process
-  const handleUpload = async () => {
-    const formData = new FormData();
-
-    if (selectedFiles) {
-      for (let i = 0; i < selectedFiles.length; i++) {
-        formData.append('files', selectedFiles[i]);
-      }
-    }
-
-    if (csvFile) {
-      formData.append('csv', csvFile);
-    }
-
-    if (!selectedFiles && !csvFile) {
-      alert('Please upload at least a PDF or a CSV file.');
-      return;
-    }
-
-    const response = await fetch('http://localhost:8000/upload/', {
-      method: 'POST',
-      body: formData,
-    });
-
-    const data = await response.json();
-    setTicketData(data.tickets);
-    setSerieTemporal(data.serie_temporal);
-    setGastoCategoria(data.gasto_categoria);
-  };
-
-  // CSV Download Handler
-  const handleDownload = () => {
-    const csvData = Papa.unparse(ticketData);
-    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute('download', 'updated_tickets.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // Chart Data: Serie Temporal
-  const serieTemporalData = {
-    labels: serieTemporal.map(item => item.Fecha),
-    datasets: [{
-      label: 'Gasto en el tiempo',
-      data: serieTemporal.map(item => item.Importe),
-      borderColor: 'rgba(75,192,192,1)',
-      fill: false,
-    }],
-  };
-
-  // Chart Data: Gasto por Categoría
-  const gastoCategoriaData = {
-    labels: gastoCategoria.map(item => item.Clasificacion),
-    datasets: [{
-      label: 'Gasto por Categoría',
-      data: gastoCategoria.map(item => item.Importe),
-      backgroundColor: 'rgba(75,192,192,0.4)',
-    }],
-  };
-
-  return (
-    <div className="App container">
-      <h1>Ticket Processor</h1>
-
-      <div className="mb-3">
-        <label className="form-label">Upload PDF(s):</label>
-        <input type="file" multiple onChange={handleFileChange} />
-      </div>
-
-      <div className="mb-3">
-        <label className="form-label">Upload CSV (optional):</label>
-        <input type="file" onChange={handleCsvChange} />
-      </div>
-
-      <button className="btn btn-primary" onClick={handleUpload}>Upload Files</button>
-
-      {ticketData.length > 0 && (
-        <div>
-          <button className="btn btn-success mt-3" onClick={handleDownload}>Download CSV</button>
-        </div>
-      )}
-
-      {serieTemporal.length > 0 && (
-        <>
-          <div className="mt-5">
-            <h3>Serie Temporal de Gasto</h3>
-            <Line data={serieTemporalData} />
-          </div>
-          <div className="mt-5">
-            <h3>Gasto por Categoría</h3>
-            <Bar data={gastoCategoriaData} />
-          </div>
-        </>
-      )}
-
-      {ticketData.length > 0 && (
-        <table className="table mt-5">
-          <thead>
-            <tr>
-              <th>Número de artículos</th>
-              <th>Descripción</th>
-              <th>Precio Unitario</th>
-              <th>Importe</th>
-              <th>Fecha</th>
-              <th>Hora</th>
-              <th>Clasificación</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ticketData.map((row, index) => (
-              <tr key={index}>
-                <td>{row['Número de artículos']}</td>
-                <td>{row['Descripción']}</td>
-                <td>{row['P. Unit'] || 'N/A'}</td>
-                <td>{row['Importe']}</td>
-                <td>{row['Fecha']}</td>
-                <td>{row['Hora']}</td>
-                <td>{row['Clasificación']}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
-  );
-}
-
-export default App;
-```
-
 ## main.py
-
 ```python
 from fastapi import FastAPI, File, UploadFile
 from typing import List
@@ -287,6 +131,8 @@ from pdf_processor import extract_text_from_pdf, process_ticket
 from fastapi.middleware.cors import CORSMiddleware
 import io
 from pdf_processor import clasificar_producto
+import unidecode
+
 app = FastAPI()
 
 # Enable CORS
@@ -297,6 +143,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Helper function to normalize strings (lowercase and remove accents)
+def normalize_string(s):
+    return unidecode.unidecode(s).lower() if isinstance(s, str) else s
 
 # Function to calculate time series and category spendings
 def calcular_graficos(df):
@@ -319,6 +169,8 @@ async def upload_files(files: List[UploadFile] = File(None), csv: UploadFile = F
             text = extract_text_from_pdf(io.BytesIO(contents))
             if text:
                 df = process_ticket(text)
+                # Normalize the classification in the dataframe
+                df['Clasificación'] = df['Clasificación'].apply(normalize_string)
                 dataframes.append(df)
 
     # Procesa el CSV y clasifica los productos
@@ -327,8 +179,9 @@ async def upload_files(files: List[UploadFile] = File(None), csv: UploadFile = F
         csv_str = io.StringIO(csv_contents.decode('utf-8'))
         df_csv = pd.read_csv(csv_str)
     
-        # Clasificar productos del CSV
+        # Clasificar productos del CSV and normalize categories
         df_csv['Clasificación'] = df_csv['Descripción'].apply(clasificar_producto)
+        df_csv['Clasificación'] = df_csv['Clasificación'].apply(normalize_string)  # Normalize category names
         dataframes.append(df_csv)
 
     # Ensure data was uploaded
@@ -337,19 +190,23 @@ async def upload_files(files: List[UploadFile] = File(None), csv: UploadFile = F
 
         # Handle NaN values before returning
         df_final.fillna(0, inplace=True)
+        print(f"The final DataFrame is: {df_final}")
 
         serie_temporal, gasto_categoria = calcular_graficos(df_final)
+
+        print(f"Time series: {serie_temporal}")
+        print(f"Category spendings: {gasto_categoria}")
         return {
             "tickets": df_final.to_dict(orient="records"),
             "serie_temporal": serie_temporal.to_dict(orient="records"),
             "gasto_categoria": gasto_categoria.to_dict(orient="records")
         }
+    
     else:
         return {"error": "Please upload at least one PDF or CSV file"}
 ```
 
 ## pdf_processor.py
-
 ```python
 import PyPDF2
 import re
@@ -434,4 +291,241 @@ def process_ticket(text):
     # Convertimos los productos a un DataFrame
     df = pd.DataFrame(productos, columns=["Número de artículos", "Descripción", "P. Unit", "Importe", "Fecha", "Hora", "Clasificación"])
     return df
+```
+
+## App.js
+```javascript
+import React, { useState } from 'react';
+import FileUpload from './components/FileUpload';
+import ChartDisplay from './components/ChartDisplay';
+import TicketTable from './components/TicketTable';
+import DownloadButton from './components/DownloadButton';
+
+function App() {
+  const [selectedFiles, setSelectedFiles] = useState(null);
+  const [csvFile, setCsvFile] = useState(null);
+  const [ticketData, setTicketData] = useState([]);
+  const [serieTemporal, setSerieTemporal] = useState([]);
+  const [gastoCategoria, setGastoCategoria] = useState([]);
+
+  // Handle file selection for PDFs
+  const handleFileChange = (event) => {
+    setSelectedFiles(event.target.files);
+  };
+
+  // Handle file selection for CSV
+  const handleCsvChange = (event) => {
+    setCsvFile(event.target.files[0]);
+  };
+
+  // Handle Upload and Process
+  const handleUpload = async () => {
+    const formData = new FormData();
+
+    if (selectedFiles) {
+      for (let i = 0; i < selectedFiles.length; i++) {
+        formData.append('files', selectedFiles[i]);
+      }
+    }
+
+    if (csvFile) {
+      formData.append('csv', csvFile);
+    }
+
+    if (!selectedFiles && !csvFile) {
+      alert('Please upload at least a PDF or a CSV file.');
+      return;
+    }
+
+    const response = await fetch('http://localhost:8000/upload/', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await response.json();
+    setTicketData(data.tickets);
+    setSerieTemporal(data.serie_temporal);
+    setGastoCategoria(data.gasto_categoria);
+  };
+
+  // Prepare Chart Data
+  const serieTemporalData = {
+    labels: serieTemporal.map(item => item.Fecha),
+    datasets: [{
+      label: 'Gasto en el tiempo',
+      data: serieTemporal.map(item => item.Importe),
+      borderColor: 'rgba(75,192,192,1)',
+      fill: false,
+    }],
+  };
+
+  const gastoCategoriaData = {
+    labels: gastoCategoria.map(item => item.Clasificacion),
+    datasets: [{
+      label: 'Gasto por Categoría',
+      data: gastoCategoria.map(item => item.Importe),
+      backgroundColor: 'rgba(75,192,192,0.4)',
+    }],
+  };
+
+  return (
+    <div className="App container">
+      <h1>Ticket Processor</h1>
+
+      {/* File Upload Component */}
+      <FileUpload handleFileChange={handleFileChange} handleCsvChange={handleCsvChange} />
+
+      {/* Upload Button */}
+      <button className="btn btn-primary" onClick={handleUpload}>Upload Files</button>
+
+      {/* Download CSV Button */}
+      {ticketData.length > 0 && (
+        <DownloadButton ticketData={ticketData} />
+      )}
+
+      {/* Chart Display */}
+      {serieTemporal.length > 0 && (
+        <ChartDisplay serieTemporalData={serieTemporalData} gastoCategoria={gastoCategoria} />
+      )}
+
+
+      {/* Ticket Table */}
+      {ticketData.length > 0 && (
+        <TicketTable ticketData={ticketData} />
+      )}
+    </div>
+  );
+}
+
+export default App;
+```
+
+## ChatDisplay
+```javascript
+import React from 'react';
+import { Line, Bar } from 'react-chartjs-2';
+import { Chart, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
+
+// Register the components needed
+Chart.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
+
+const ChartDisplay = ({ serieTemporalData, gastoCategoria = [] }) => {
+  console.log("gastoCategoria inside ChartDisplay: ", gastoCategoria);
+
+  const gastoCategoriaData = gastoCategoria.length > 0 ? {
+    labels: gastoCategoria.map(item => item['Clasificación']),  // No need to normalize anymore
+    datasets: [{
+      label: 'Gasto por Categoría',
+      data: gastoCategoria.map(item => item.Importe || 0),  // Handle undefined `Importe`
+      backgroundColor: 'rgba(75,192,192,0.4)',
+    }],
+  } : null;
+
+  return (
+    <div>
+      {serieTemporalData && (
+        <div className="mt-5">
+          <h3>Serie Temporal de Gasto</h3>
+          <Line data={serieTemporalData} />
+        </div>
+      )}
+
+      {gastoCategoriaData && (
+        <div className="mt-5">
+          <h3>Gasto por Categoría</h3>
+          <Bar data={gastoCategoriaData} />
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ChartDisplay;
+```
+## DownloadButton
+```javascript
+import React from 'react';
+import Papa from 'papaparse';
+
+const DownloadButton = ({ ticketData }) => {
+  const handleDownload = () => {
+    const csvData = Papa.unparse(ticketData);
+    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'updated_tickets.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <button className="btn btn-success mt-3" onClick={handleDownload}>
+      Download CSV
+    </button>
+  );
+};
+
+export default DownloadButton;
+```
+
+## FileUpload
+```javascript
+import React from 'react';
+
+const FileUpload = ({ handleFileChange, handleCsvChange }) => {
+  return (
+    <div>
+      <div className="mb-3">
+        <label className="form-label">Upload PDF(s):</label>
+        <input type="file" multiple onChange={handleFileChange} />
+      </div>
+
+      <div className="mb-3">
+        <label className="form-label">Upload CSV (optional):</label>
+        <input type="file" onChange={handleCsvChange} />
+      </div>
+    </div>
+  );
+};
+
+export default FileUpload;
+```
+
+## TicketTable
+```javascript
+import React from 'react';
+
+const TicketTable = ({ ticketData }) => {
+  return (
+    <table className="table mt-5">
+      <thead>
+        <tr>
+          <th>Número de artículos</th>
+          <th>Descripción</th>
+          <th>Precio Unitario</th>
+          <th>Importe</th>
+          <th>Fecha</th>
+          <th>Hora</th>
+          <th>Clasificación</th>
+        </tr>
+      </thead>
+      <tbody>
+        {ticketData.map((row, index) => (
+          <tr key={index}>
+            <td>{row['Número de artículos']}</td>
+            <td>{row['Descripción']}</td>
+            <td>{row['P. Unit'] || 'N/A'}</td>
+            <td>{row['Importe']}</td>
+            <td>{row['Fecha']}</td>
+            <td>{row['Hora']}</td>
+            <td>{row['Clasificación']}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+};
+
+export default TicketTable;
 ```
