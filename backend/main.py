@@ -6,6 +6,8 @@ from pdf_processor import extract_text_from_pdf, process_ticket
 from fastapi.middleware.cors import CORSMiddleware
 import io
 from pdf_processor import clasificar_producto
+import unidecode
+
 app = FastAPI()
 
 # Enable CORS
@@ -16,6 +18,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Helper function to normalize strings (lowercase and remove accents)
+def normalize_string(s):
+    return unidecode.unidecode(s).lower() if isinstance(s, str) else s
 
 # Function to calculate time series and category spendings
 def calcular_graficos(df):
@@ -38,6 +44,8 @@ async def upload_files(files: List[UploadFile] = File(None), csv: UploadFile = F
             text = extract_text_from_pdf(io.BytesIO(contents))
             if text:
                 df = process_ticket(text)
+                # Normalize the classification in the dataframe
+                df['Clasificación'] = df['Clasificación'].apply(normalize_string)
                 dataframes.append(df)
 
     # Procesa el CSV y clasifica los productos
@@ -46,8 +54,9 @@ async def upload_files(files: List[UploadFile] = File(None), csv: UploadFile = F
         csv_str = io.StringIO(csv_contents.decode('utf-8'))
         df_csv = pd.read_csv(csv_str)
     
-        # Clasificar productos del CSV
+        # Clasificar productos del CSV and normalize categories
         df_csv['Clasificación'] = df_csv['Descripción'].apply(clasificar_producto)
+        df_csv['Clasificación'] = df_csv['Clasificación'].apply(normalize_string)  # Normalize category names
         dataframes.append(df_csv)
 
     # Ensure data was uploaded
@@ -56,12 +65,17 @@ async def upload_files(files: List[UploadFile] = File(None), csv: UploadFile = F
 
         # Handle NaN values before returning
         df_final.fillna(0, inplace=True)
+        print(f"The final DataFrame is: {df_final}")
 
         serie_temporal, gasto_categoria = calcular_graficos(df_final)
+
+        print(f"Time series: {serie_temporal}")
+        print(f"Category spendings: {gasto_categoria}")
         return {
             "tickets": df_final.to_dict(orient="records"),
             "serie_temporal": serie_temporal.to_dict(orient="records"),
             "gasto_categoria": gasto_categoria.to_dict(orient="records")
         }
+    
     else:
         return {"error": "Please upload at least one PDF or CSV file"}

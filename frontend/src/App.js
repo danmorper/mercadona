@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Line, Bar } from 'react-chartjs-2';
-import 'chart.js/auto'; // Import Chart.js
-import Papa from 'papaparse'; // For CSV parsing
+import FileUpload from './components/FileUpload';
+import ChartDisplay from './components/ChartDisplay';
+import TicketTable from './components/TicketTable';
+import DownloadButton from './components/DownloadButton';
 
 function App() {
   const [selectedFiles, setSelectedFiles] = useState(null);
@@ -50,19 +51,7 @@ function App() {
     setGastoCategoria(data.gasto_categoria);
   };
 
-  // CSV Download Handler
-  const handleDownload = () => {
-    const csvData = Papa.unparse(ticketData);
-    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute('download', 'updated_tickets.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // Chart Data: Serie Temporal
+  // Prepare Chart Data
   const serieTemporalData = {
     labels: serieTemporal.map(item => item.Fecha),
     datasets: [{
@@ -73,9 +62,8 @@ function App() {
     }],
   };
 
-  // Chart Data: Gasto por Categoría
   const gastoCategoriaData = {
-    labels: gastoCategoria.map(item => item.Clasificación),
+    labels: gastoCategoria.map(item => item.Clasificacion),
     datasets: [{
       label: 'Gasto por Categoría',
       data: gastoCategoria.map(item => item.Importe),
@@ -87,64 +75,26 @@ function App() {
     <div className="App container">
       <h1>Ticket Processor</h1>
 
-      <div className="mb-3">
-        <label className="form-label">Upload PDF(s):</label>
-        <input type="file" multiple onChange={handleFileChange} />
-      </div>
+      {/* File Upload Component */}
+      <FileUpload handleFileChange={handleFileChange} handleCsvChange={handleCsvChange} />
 
-      <div className="mb-3">
-        <label className="form-label">Upload CSV (optional):</label>
-        <input type="file" onChange={handleCsvChange} />
-      </div>
-
+      {/* Upload Button */}
       <button className="btn btn-primary" onClick={handleUpload}>Upload Files</button>
 
+      {/* Download CSV Button */}
       {ticketData.length > 0 && (
-        <div>
-          <button className="btn btn-success mt-3" onClick={handleDownload}>Download CSV</button>
-        </div>
+        <DownloadButton ticketData={ticketData} />
       )}
 
+      {/* Chart Display */}
       {serieTemporal.length > 0 && (
-        <>
-          <div className="mt-5">
-            <h3>Serie Temporal de Gasto</h3>
-            <Line data={serieTemporalData} />
-          </div>
-          <div className="mt-5">
-            <h3>Gasto por Categoría</h3>
-            <Bar data={gastoCategoriaData} />
-          </div>
-        </>
+        <ChartDisplay serieTemporalData={serieTemporalData} gastoCategoria={gastoCategoria} />
       )}
 
+
+      {/* Ticket Table */}
       {ticketData.length > 0 && (
-        <table className="table mt-5">
-          <thead>
-            <tr>
-              <th>Número de artículos</th>
-              <th>Descripción</th>
-              <th>Precio Unitario</th>
-              <th>Importe</th>
-              <th>Fecha</th>
-              <th>Hora</th>
-              <th>Clasificación</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ticketData.map((row, index) => (
-              <tr key={index}>
-                <td>{row['Número de artículos']}</td>
-                <td>{row['Descripción']}</td>
-                <td>{row['P. Unit'] || 'N/A'}</td>
-                <td>{row['Importe']}</td>
-                <td>{row['Fecha']}</td>
-                <td>{row['Hora']}</td>
-                <td>{row['Clasificación']}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <TicketTable ticketData={ticketData} />
       )}
     </div>
   );
