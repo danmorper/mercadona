@@ -3,6 +3,7 @@ import FileUpload from './components/FileUpload';
 import ChartDisplay from './components/ChartDisplay';
 import TicketTable from './components/TicketTable';
 import DownloadButton from './components/DownloadButton';
+import ClassificationManager from './components/ClassificationManager';  // Importamos el nuevo componente
 
 function App() {
   const [selectedFiles, setSelectedFiles] = useState(null);
@@ -13,12 +14,12 @@ function App() {
 
   // Handle file selection for PDFs
   const handleFileChange = (event) => {
-    setSelectedFiles(event.target.files);
+    setSelectedFiles(event.target.files); // event es el objeto de evento que React pasa automáticamente a los controladores de eventos (en este caso, cuando se selecciona un archivo)
   };
 
   // Handle file selection for CSV
   const handleCsvChange = (event) => {
-    setCsvFile(event.target.files[0]);
+    setCsvFile(event.target.files[0]); // It must be only one file. Change it in the future to raise an error if more than one file is selected.
   };
 
   // Handle Upload and Process
@@ -91,13 +92,20 @@ function App() {
         <ChartDisplay serieTemporalData={serieTemporalData} gastoCategoria={gastoCategoria} />
       )}
 
-
       {/* Ticket Table */}
       {ticketData.length > 0 && (
         <TicketTable ticketData={ticketData} />
       )}
+
+      {/* Classification Manager Component */}
+      <ClassificationManager />  {/* Añadimos el componente aquí */}
+
+
+      {/* Componentes existentes para mostrar gráficos y tablas */}
+      {ticketData.length > 0 && <TicketTable ticketData={ticketData} />}
     </div>
   );
 }
 
 export default App;
+

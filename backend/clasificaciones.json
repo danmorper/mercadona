@@ -1,0 +1,51 @@
+{
+    "clasificaciones": {
+        "Verduras y frutas": [
+            "manzana",
+            "tomate",
+            "lechuga",
+            "malla",
+            "fruta",
+            "verdura",
+            "cherry",
+            "cerveza"
+        ],
+        "Bollería": [
+            "croissant",
+            "bollería",
+            "pan",
+            "donut",
+            "galleta"
+        ],
+        "Yogures y lácteos": [
+            "yogur",
+            "leche",
+            "queso",
+            "lácteo"
+        ],
+        "Comida precocinada": [
+            "pizza",
+            "lasagna",
+            "lasaña",
+            "comida precocinada"
+        ],
+        "Bebidas": [
+            "bebida",
+            "café",
+            "zumo",
+            "agua"
+        ],
+        "Bebidas alcohólicas": [
+            "cerveza",
+            "vino",
+            "ron",
+            "whisky",
+            "ginebra",
+            "fino"
+        ],
+        "Otros": [],
+        "parking": [
+            "parking"
+        ]
+    }
+}
