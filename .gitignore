@@ -1,5 +1,5 @@
 # Ignorar entornos virtuales de Python
-backend/venv/
+venv/
 pyvenv.cfg
 
 # Ignorar archivos de caché de Python

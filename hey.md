@@ -1,0 +1,2 @@
+- registro electronico -> sustiturio del titulo https://www.us.es/laUS/secretaria-general/registro-general
+- sede electronica -> certificado academico oficial https://sede.us.es/oficina/tramites/acceso.do?id=8229&block=cEstudiantes_1098&blockType=AREAS_SEDE
